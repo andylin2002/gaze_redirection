@@ -6,9 +6,9 @@ import os
 import logging
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+'''import tensorflow.contrib.slim as slim'''
 
-from tensorflow.contrib.data import shuffle_and_repeat, map_and_batch
+'''from tensorflow.contrib.data import shuffle_and_repeat, map_and_batch'''
 
 from src.archs import discriminator, generator, vgg_16
 from scipy.misc import imsave
@@ -107,22 +107,53 @@ class Model(object):
              image_data_class.test_images_t,
              image_data_class.test_angles_g))
 
+        '''
         train_dataset = train_dataset.apply(
             shuffle_and_repeat(train_dataset_num)).apply(
             map_and_batch(image_data_class.image_processing,
                           hps.batch_size,
                           num_parallel_batches=8))
+        '''
 
+        train_dataset = (
+            train_dataset
+            .shuffle(buffer_size=train_dataset_num)  # 隨機打亂數據，緩衝區大小為數據集大小
+            .repeat()  # 無限重複數據集
+            .map(image_data_class.image_processing, num_parallel_calls=tf.data.AUTOTUNE)  # 並行映射
+            .batch(hps.batch_size)  # 分批處理
+            .prefetch(tf.data.AUTOTUNE)  # 預取數據以加速訓練
+        )
+
+        '''
         valid_dataset = test_dataset.apply(
             shuffle_and_repeat(test_dataset_num)).apply(
             map_and_batch(image_data_class.image_processing,
                           hps.batch_size,
                           num_parallel_batches=8))
+        '''
 
+        valid_dataset = (
+            test_dataset
+            .shuffle(buffer_size=test_dataset_num)
+            .repeat()
+            .map(image_data_class.image_processing, num_parallel_calls=tf.data.AUTOTUNE)
+            .batch(hps.batch_size)
+            .prefetch(tf.data.AUTOTUNE)
+        )
+
+        '''
         test_dataset = test_dataset.apply(
             map_and_batch(image_data_class.image_processing,
                           hps.batch_size,
                           num_parallel_batches=8))
+        '''
+
+        test_dataset = (
+            test_dataset
+            .map(image_data_class.image_processing, num_parallel_calls=tf.data.AUTOTUNE)
+            .batch(hps.batch_size)
+            .prefetch(tf.data.AUTOTUNE)
+        )
 
         #建立迭代器，以便模型在訓練過程中流暢地獲取批次資料
         train_dataset_iterator = train_dataset.make_one_shot_iterator()
@@ -296,6 +327,7 @@ class Model(object):
         tf_config = tf.ConfigProto()
         tf_config.gpu_options.allow_growth = True ## 設定 GPU 記憶體動態增長
 
+        '''
         with tf.Session(config=tf_config) as sess:
 
             # init
@@ -344,6 +376,73 @@ class Model(object):
 
             except KeyboardInterrupt:
                 print("stop training")
+        '''
+
+        # TensorFlow 2.x 不需要明確建立 Session，默認是 Eager Execution
+
+        # 初始化模型變數
+        self.init_op()  # 假設這是個自定義初始化函數
+
+        # 創建摘要寫入器，用於 TensorBoard 可視化
+        summary_writer = tf.summary.create_file_writer(summary_dir)
+
+        # 設置檢查點保存器
+        checkpoint = tf.train.Checkpoint(optimizer=self.optimizer, model=self.model)
+        checkpoint_manager = tf.train.CheckpointManager(
+            checkpoint, directory=hps.log_dir, max_to_keep=3
+        )
+
+        # 從一個 VGG-16 模型載入預訓練參數
+        variables_to_restore = [
+            var for var in self.model.trainable_variables if 'vgg_16' in var.name
+        ]
+        vgg_checkpoint = tf.train.Checkpoint(vgg_model=variables_to_restore)
+        vgg_checkpoint.restore(hps.vgg_path).assert_existing_objects_matched()
+
+        def train_step(it):
+            # 訓練判別器
+            with tf.GradientTape() as tape_d:
+                d_loss = self.d_op()  # 計算 discriminator 的損失
+            gradients_d = tape_d.gradient(d_loss, self.d_vars)
+            self.optimizer.apply_gradients(zip(gradients_d, self.d_vars))
+
+            g_loss = None  # 初始化 g_loss
+            if it % 5 == 0:
+                # 訓練生成器
+                with tf.GradientTape() as tape_g:
+                    g_loss = self.g_op()  # 計算 generator 的損失
+                gradients_g = tape_g.gradient(g_loss, self.g_vars)
+                self.optimizer.apply_gradients(zip(gradients_g, self.g_vars))
+
+            return d_loss, g_loss
+
+        try:
+            for epoch in range(num_epoch):
+                print(f"Epoch: {epoch}")
+
+                # 動態調整學習率
+                if epoch >= hps.epochs / 2:
+                    learning_rate = (2.0 - 2.0 * epoch / hps.epochs) * hps.lr
+                self.optimizer.learning_rate.assign(learning_rate)
+
+                for it in range(num_iter):
+                    d_loss, g_loss = train_step(it)
+
+                    # 每隔 summary_steps 進行摘要記錄與模型保存
+                    if it % hps.summary_steps == 0:
+                        with summary_writer.as_default():
+                            # 記錄訓練摘要
+                            tf.summary.scalar("learning_rate", learning_rate, step=self.global_step)
+                            tf.summary.scalar("d_loss", d_loss, step=self.global_step)
+                            if g_loss is not None:  # 確保 g_loss 在適當時候被記錄
+                                tf.summary.scalar("g_loss", g_loss, step=self.global_step)
+                            summary_writer.flush()
+
+                        # 保存模型檢查點
+                        checkpoint_manager.save(checkpoint_number=self.global_step.numpy())
+
+        except KeyboardInterrupt:
+            print("Training stopped by user.")
 
     def eval(self):
         """ Evaluation. """
