@@ -63,3 +63,5 @@ elif params.mode == 'eval':
 
 else:
     raise ValueError("mode must be 'train' or 'eval'")
+
+#test text
