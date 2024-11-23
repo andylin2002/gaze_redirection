@@ -14,7 +14,7 @@ parser.add_argument('--mode', type=str, default='train',
                     help='running mode')
 parser.add_argument('--batch_size', type=int, default=32,
                     help='batch size')
-parser.add_argument('--data_path', type=str, default="gaze_redirection-master/Columbia Gaze Data Set", help='path of faces')
+parser.add_argument('--data_path', type=str, default="/home/andy/AILab/AIfinal/gaze_redirection-master/Columbia Gaze Data Set/", help='path of faces')
 
 # optimizer params
 parser.add_argument('--optimizer', type=str, default='adam',
