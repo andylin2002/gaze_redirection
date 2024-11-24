@@ -54,7 +54,7 @@ tar -xvf vgg_16_2016_08_28.tar.gz
 ## Train
 
 ```Bash
-python main.py --mode train --data_path ./dataset/all/ --log_dir ./log/ --batch_size 32 --vgg_path ./vgg_16.ckpt
+python main.py --mode train --data_path /home/andy/AILab/AIfinal/gaze_redirection-master/eyespatch_dataset/all --log_dir ./log/ --vgg_path ./vgg_16.ckpt
 ```
 
 ## Test
