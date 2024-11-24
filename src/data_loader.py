@@ -100,7 +100,6 @@ class ImageData(object):
             print("File name:", file_name)
 
             x = tf.read_file(file_name)
-            print(x)
             img = tf.image.decode_jpeg(x, channels=self.channels) #將原始字節內容解碼為 JPEG 格式的圖片張量
             img = tf.image.resize_images(img, [self.load_size, self.load_size])#將圖片調整為指定的尺寸
             img = tf.cast(img, tf.float32) / 127.5 - 1.0 #歸一化
