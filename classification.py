@@ -5,11 +5,11 @@ import re
 # 原始資料夾的路徑
 source_dir = "/home/andy/AILab/AIfinal/gaze_redirection-master/face_dataset"
 # 篩選後的目標資料夾
-destination_dirN30P = "/home/andy/AILab/AIfinal/gaze_redirection-master/train_eyes_patch/N30P"
-destination_dirN15P = "/home/andy/AILab/AIfinal/gaze_redirection-master/train_eyes_patch/N15P"
-destination_dir0P = "/home/andy/AILab/AIfinal/gaze_redirection-master/train_eyes_patch/0P"
-destination_dir15P = "/home/andy/AILab/AIfinal/gaze_redirection-master/train_eyes_patch/15P"
-destination_dir30P = "/home/andy/AILab/AIfinal/gaze_redirection-master/train_eyes_patch/30P"
+destination_dirN30P = "/home/andy/AILab/AIfinal/gaze_redirection-master/reordered_face_dataset/N30P"
+destination_dirN15P = "/home/andy/AILab/AIfinal/gaze_redirection-master/reordered_face_dataset/N15P"
+destination_dir0P = "/home/andy/AILab/AIfinal/gaze_redirection-master/reordered_face_dataset/0P"
+destination_dir15P = "/home/andy/AILab/AIfinal/gaze_redirection-master/reordered_face_dataset/15P"
+destination_dir30P = "/home/andy/AILab/AIfinal/gaze_redirection-master/reordered_face_dataset/30P"
 
 # 確保目標資料夾存在，若不存在則建立
 os.makedirs(destination_dirN30P, exist_ok=True)

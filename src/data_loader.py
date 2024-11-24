@@ -34,7 +34,7 @@ class ImageData(object):
             # side = f_name.split('.')[0].split('_')[-1]
             # key = key + '_' + side
             fields = f_name.split('.')[0].split('_') #將檔案名稱以點號 . 分割，提取檔案名稱部分
-            identity = fields[0]
+            identity = fields[0]#可能要改（因為有left和right）
             head_pose = fields[2]
             side = fields[-1]
             key = '_'.join([identity, head_pose, side])
